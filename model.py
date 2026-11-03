@@ -1,3 +1,4 @@
+
 import torch
 import torch.nn as nn
 
@@ -10,10 +11,8 @@ class ConvolutionNet(nn.Module):
         self.network = nn.Sequential(
             nn.Linear(128, 256),
             nn.ReLU(),
-
             nn.Linear(256, 256),
             nn.ReLU(),
-
             nn.Linear(256, 64)
         )
 
@@ -26,7 +25,6 @@ device = torch.device(
 )
 
 
-@torch.no_grad()
 def load_model(model_path="models/neuroconvolve_mlp.pth"):
 
     model = ConvolutionNet().to(device)
