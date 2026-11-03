@@ -2,15 +2,12 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 
 from model import load_model, predict
 from convolution import generate_signal, calculate_convolution
 
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+# ==================== PAGE CONFIG ====================
 
 st.set_page_config(
     page_title="NeuroConvolve",
@@ -20,34 +17,19 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
-# CUSTOM CSS
-# --------------------------------------------------
+# ==================== CUSTOM CSS ====================
 
 st.markdown("""
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
-:root {
-    --bg: #101225;
-    --panel: #1B1E38;
-    --purple: #A78BFA;
-    --pink: #F472B6;
-    --cyan: #38BDF8;
-    --green: #34D399;
-    --orange: #FBBF24;
-    --text: #F5F3FF;
-    --muted: #B6B5D0;
-}
 
 .stApp {
     background:
         radial-gradient(ellipse at 5% 5%, #35205D 0%, transparent 35%),
         radial-gradient(ellipse at 95% 10%, #123B5B 0%, transparent 35%),
         radial-gradient(ellipse at 50% 100%, #3D1D50 0%, transparent 40%),
-        var(--bg);
-    color: var(--text);
+        #101225;
+    color: #F5F3FF;
     font-family: 'DM Sans', sans-serif;
 }
 
@@ -66,23 +48,17 @@ st.markdown("""
 
 h1, h2, h3 {
     font-family: 'Space Grotesk', sans-serif !important;
-    color: #FFFFFF !important;
-}
-
-p, label, span {
-    color: #D5D3EA;
+    color: white !important;
 }
 
 .hero {
     padding: 35px 30px;
     border-radius: 25px;
-    background: linear-gradient(
-        115deg,
-        rgba(124, 58, 237, 0.32),
-        rgba(219, 39, 119, 0.22),
-        rgba(14, 165, 233, 0.25)
-    );
-    border: 1px solid rgba(196, 181, 253, 0.3);
+    background: linear-gradient(115deg,
+        rgba(124,58,237,0.4),
+        rgba(219,39,119,0.3),
+        rgba(14,165,233,0.3));
+    border: 1px solid rgba(196,181,253,0.35);
     box-shadow: 0 15px 50px rgba(0,0,0,0.25);
     margin-bottom: 28px;
 }
@@ -91,22 +67,23 @@ p, label, span {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 43px;
     font-weight: 800;
-    background: linear-gradient(90deg, #C4B5FD, #F9A8D4, #7DD3FC);
+    background: linear-gradient(90deg,#C4B5FD,#F9A8D4,#7DD3FC);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
 }
 
 .hero-subtitle {
     color: #DDD6FE;
     font-size: 16px;
+    margin-top: 8px;
+    line-height: 1.7;
 }
 
 .section-heading {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 23px;
     font-weight: 700;
-    margin-top: 25px;
+    margin-top: 28px;
     margin-bottom: 15px;
     color: #E9D5FF;
 }
@@ -114,8 +91,8 @@ p, label, span {
 .metric-card {
     padding: 20px;
     border-radius: 18px;
-    background: linear-gradient(145deg, #272448, #202D4C);
-    border: 1px solid rgba(167, 139, 250, 0.3);
+    background: linear-gradient(145deg,#272448,#202D4C);
+    border: 1px solid rgba(167,139,250,0.3);
     box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     min-height: 115px;
 }
@@ -123,57 +100,39 @@ p, label, span {
 .metric-label {
     color: #C4B5FD;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .metric-value {
-    color: #FFFFFF;
+    color: white;
     font-family: 'Space Grotesk', sans-serif;
     font-size: 27px;
     font-weight: 800;
     margin-top: 8px;
 }
 
-.info-card {
-    background: linear-gradient(135deg, #252044, #192C45);
+.chart-card {
+    background: linear-gradient(145deg,#272448,#202D4C);
     padding: 18px;
-    border-radius: 16px;
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    margin-bottom: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(167,139,250,0.25);
+    margin-bottom: 15px;
 }
 
-div[data-testid="stButton"] button {
-    background: linear-gradient(90deg, #8B5CF6, #EC4899);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    padding: 10px 20px;
-    transition: 0.2s;
+.info-card {
+    background: linear-gradient(135deg,#252044,#192C45);
+    padding: 24px;
+    border-radius: 18px;
+    border: 1px solid rgba(56,189,248,0.3);
+    line-height: 1.8;
+    color: #F5F3FF;
 }
 
-div[data-testid="stButton"] button:hover {
-    background: linear-gradient(90deg, #A78BFA, #F472B6);
-    box-shadow: 0 0 20px rgba(236, 72, 153, 0.35);
-    transform: translateY(-2px);
-}
-
-div[data-testid="stDownloadButton"] button {
-    background: linear-gradient(90deg, #0891B2, #2563EB);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-}
-
-.stSelectbox, .stSlider {
-    margin-bottom: 12px;
-}
-
-hr {
-    border-color: rgba(196, 181, 253, 0.2);
+.info-card h2 {
+    color: #E9D5FF !important;
+    margin-top: 0;
 }
 
 .footer {
@@ -183,51 +142,54 @@ hr {
     font-size: 13px;
 }
 
+div[data-testid="stDownloadButton"] button {
+    background: linear-gradient(90deg,#0891B2,#2563EB);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+hr {
+    border-color: rgba(196,181,253,0.2);
+}
 </style>
 """, unsafe_allow_html=True)
 
 
-# --------------------------------------------------
-# HERO SECTION
-# --------------------------------------------------
+# ==================== HERO ====================
 
-st.markdown("""
+st.html("""
 <div class="hero">
     <div class="hero-title">〰️ NeuroConvolve</div>
     <div class="hero-subtitle">
         Where Mathematical Convolution Meets Neural Networks.
         <br>
-        Explore signals, calculate convolution and compare it with AI predictions.
+        Explore signals, calculate convolution and compare it
+        with AI predictions.
     </div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
 
-# --------------------------------------------------
-# MODEL LOADING
-# --------------------------------------------------
+# ==================== LOAD MODEL ====================
 
 @st.cache_resource
 def get_model():
-    return load_model()
+    return load_model("models/neuroconvolve_mlp.pth")
 
 
 try:
     model = get_model()
 except FileNotFoundError:
-    st.error(
-        "Model file not found. Make sure "
-        "`models/neuroconvolve_mlp.pth` exists."
-    )
+    st.error("Model file not found: models/neuroconvolve_mlp.pth")
     st.stop()
 except Exception as e:
-    st.error(f"Could not load model: {e}")
+    st.error(f"Unable to load model: {e}")
     st.stop()
 
 
-# --------------------------------------------------
-# SIDEBAR
-# --------------------------------------------------
+# ==================== SIDEBAR ====================
 
 st.sidebar.markdown("## 🎛️ Signal Studio")
 st.sidebar.caption("Configure your input signals")
@@ -252,9 +214,7 @@ signal2_type = st.sidebar.selectbox(
 )
 
 
-# --------------------------------------------------
-# SIGNAL CONTROLS
-# --------------------------------------------------
+# ==================== SIGNAL CONTROLS ====================
 
 def signal_controls(signal_name, signal_type):
 
@@ -282,41 +242,38 @@ def signal_controls(signal_name, signal_type):
 
         return amplitude, 1.0, 0.0, center, width
 
-    else:
+    frequency = st.sidebar.slider(
+        f"{signal_name} Frequency",
+        0.1, 3.0, 1.0, 0.1,
+        key=f"{signal_name}_freq"
+    )
 
-        frequency = st.sidebar.slider(
-            f"{signal_name} Frequency",
-            0.1, 3.0, 1.0, 0.1,
-            key=f"{signal_name}_freq"
-        )
+    phase = st.sidebar.slider(
+        f"{signal_name} Phase",
+        0.0, 6.28, 0.0, 0.1,
+        key=f"{signal_name}_phase"
+    )
 
-        phase = st.sidebar.slider(
-            f"{signal_name} Phase",
-            0.0, 6.28, 0.0, 0.1,
-            key=f"{signal_name}_phase"
-        )
-
-        return amplitude, frequency, phase, 0.0, 1.0
+    return amplitude, frequency, phase, 0.0, 1.0
 
 
 amp1, freq1, phase1, center1, width1 = signal_controls(
     "Signal 1", signal1_type
 )
 
+st.sidebar.markdown("---")
+
 amp2, freq2, phase2, center2, width2 = signal_controls(
     "Signal 2", signal2_type
 )
 
 
-# --------------------------------------------------
-# GENERATE SIGNALS
-# --------------------------------------------------
+# ==================== GENERATE SIGNALS ====================
 
 t = np.linspace(-5, 5, 64)
 
 signal1 = generate_signal(
-    t,
-    signal1_type,
+    t, signal1_type,
     amplitude=amp1,
     frequency=freq1,
     phase=phase1,
@@ -325,8 +282,7 @@ signal1 = generate_signal(
 )
 
 signal2 = generate_signal(
-    t,
-    signal2_type,
+    t, signal2_type,
     amplitude=amp2,
     frequency=freq2,
     phase=phase2,
@@ -335,17 +291,25 @@ signal2 = generate_signal(
 )
 
 
-# --------------------------------------------------
-# CONVOLUTION
-# --------------------------------------------------
+# ==================== MATHEMATICAL CONVOLUTION ====================
 
 conv_t, actual = calculate_convolution(signal1, signal2)
 
-predicted = predict(model, signal1, signal2)
+
+# ==================== AI PREDICTION ====================
+
+try:
+    predicted = predict(model, signal1, signal2)
+except Exception as e:
+    st.error(f"Prediction failed: {e}")
+    st.stop()
 
 if len(actual) != len(predicted):
-    st.error("Prediction and actual output dimensions do not match.")
+    st.error("Actual and predicted output dimensions do not match.")
     st.stop()
+
+
+# ==================== METRICS ====================
 
 error = actual - predicted
 
@@ -354,202 +318,148 @@ mse = np.mean(error ** 2)
 rmse = np.sqrt(mse)
 
 
-# --------------------------------------------------
-# METRICS
-# --------------------------------------------------
+# ==================== MODEL PERFORMANCE ====================
 
-st.markdown(
-    '<div class="section-heading">📊 Model Performance</div>',
-    unsafe_allow_html=True
-)
+st.html("""
+<div class="section-heading">📊 Model Performance</div>
+""")
 
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.markdown(f"""
+    st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💜 Mean Absolute Error</div>
         <div class="metric-value">{mae:.5f}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 with c2:
-    st.markdown(f"""
+    st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💗 Mean Squared Error</div>
         <div class="metric-value">{mse:.5f}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 with c3:
-    st.markdown(f"""
+    st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💙 Root Mean Squared Error</div>
         <div class="metric-value">{rmse:.5f}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
-# --------------------------------------------------
-# SIGNAL VISUALIZATION
-# --------------------------------------------------
+# ==================== INPUT SIGNAL VISUALIZATION ====================
 
-st.markdown(
-    '<div class="section-heading">〰️ Input Signal Visualization</div>',
-    unsafe_allow_html=True
-)
+st.html("""
+<div class="section-heading">〰️ Input Signal Visualization</div>
+""")
 
 col1, col2 = st.columns(2)
 
-def make_signal_plot(x, y, title, color, fillcolor):
+signal1_df = pd.DataFrame({
+    "Time": t,
+    "Amplitude": signal1
+})
 
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(
-        x=x,
-        y=y,
-        mode="lines",
-        name=title,
-        line=dict(color=color, width=3),
-        fill="tozeroy",
-        fillcolor=fillcolor
-    ))
-
-    fig.update_layout(
-        title=title,
-        template="plotly_dark",
-        height=340,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#F5F3FF"),
-        margin=dict(l=15, r=15, t=50, b=15),
-        xaxis_title="Time",
-        yaxis_title="Amplitude",
-        showlegend=False
-    )
-
-    return fig
-
+signal2_df = pd.DataFrame({
+    "Time": t,
+    "Amplitude": signal2
+})
 
 with col1:
-    st.plotly_chart(
-        make_signal_plot(
-            t, signal1, f"Signal 1 — {signal1_type}",
-            "#C084FC", "rgba(192,132,252,0.15)"
-        ),
-        use_container_width=True
+    st.html(f"""
+    <div class="chart-card">
+        <b>🟣 Signal 1 — {signal1_type}</b>
+    </div>
+    """)
+
+    st.line_chart(
+        signal1_df,
+        x="Time",
+        y="Amplitude",
+        color="#C084FC",
+        height=300,
+        width="stretch"
     )
 
 with col2:
-    st.plotly_chart(
-        make_signal_plot(
-            t, signal2, f"Signal 2 — {signal2_type}",
-            "#38BDF8", "rgba(56,189,248,0.15)"
-        ),
-        use_container_width=True
+    st.html(f"""
+    <div class="chart-card">
+        <b>🔵 Signal 2 — {signal2_type}</b>
+    </div>
+    """)
+
+    st.line_chart(
+        signal2_df,
+        x="Time",
+        y="Amplitude",
+        color="#38BDF8",
+        height=300,
+        width="stretch"
     )
 
 
-# --------------------------------------------------
-# CONVOLUTION COMPARISON
-# --------------------------------------------------
+# ==================== CONVOLUTION COMPARISON ====================
 
-st.markdown(
-    '<div class="section-heading">🧠 Mathematical Convolution vs AI Prediction</div>',
-    unsafe_allow_html=True
+st.html("""
+<div class="section-heading">
+    🧠 Mathematical Convolution vs AI Prediction
+</div>
+""")
+
+comparison_df = pd.DataFrame({
+    "Time Shift": conv_t,
+    "Actual Convolution": actual,
+    "AI Prediction": predicted
+})
+
+st.line_chart(
+    comparison_df,
+    x="Time Shift",
+    y=["Actual Convolution", "AI Prediction"],
+    color=["#34D399", "#F472B6"],
+    height=420,
+    width="stretch"
 )
 
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(
-    x=conv_t,
-    y=actual,
-    mode="lines",
-    name="Actual Convolution",
-    line=dict(color="#34D399", width=3)
-))
-
-fig.add_trace(go.Scatter(
-    x=conv_t,
-    y=predicted,
-    mode="lines",
-    name="Neural Network Prediction",
-    line=dict(color="#F472B6", width=3, dash="dash")
-))
-
-fig.update_layout(
-    template="plotly_dark",
-    height=440,
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#F5F3FF"),
-    xaxis_title="Time Shift",
-    yaxis_title="Convolution Value",
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="right",
-        x=1
-    ),
-    margin=dict(l=15, r=15, t=50, b=15)
-)
-
-st.plotly_chart(fig, use_container_width=True)
+st.html("""
+<div class="chart-card">
+    <span style="color:#34D399;">● Actual Convolution</span>
+    &nbsp;&nbsp;&nbsp;
+    <span style="color:#F472B6;">● AI Prediction</span>
+</div>
+""")
 
 
-# --------------------------------------------------
-# ERROR ANALYSIS
-# --------------------------------------------------
+# ==================== ERROR ANALYSIS ====================
 
-st.markdown(
-    '<div class="section-heading">📉 Prediction Error Analysis</div>',
-    unsafe_allow_html=True
-)
+st.html("""
+<div class="section-heading">📉 Prediction Error Analysis</div>
+""")
 
-error_fig = go.Figure()
+error_df = pd.DataFrame({
+    "Time Shift": conv_t,
+    "Prediction Error": error
+})
 
-error_fig.add_trace(go.Bar(
-    x=conv_t,
-    y=error,
-    name="Prediction Error",
-    marker=dict(
-        color=error,
-        colorscale="Plasma",
-        showscale=True,
-        colorbar=dict(title="Error")
-    )
-))
-
-error_fig.add_hline(
-    y=0,
-    line_dash="dash",
-    line_color="#FFFFFF",
-    opacity=0.6
-)
-
-error_fig.update_layout(
-    template="plotly_dark",
+st.line_chart(
+    error_df,
+    x="Time Shift",
+    y="Prediction Error",
+    color="#FBBF24",
     height=320,
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#F5F3FF"),
-    xaxis_title="Time Shift",
-    yaxis_title="Actual - Predicted",
-    margin=dict(l=15, r=15, t=30, b=15)
+    width="stretch"
 )
 
-st.plotly_chart(error_fig, use_container_width=True)
 
+# ==================== NUMERICAL RESULTS ====================
 
-# --------------------------------------------------
-# DATA TABLE
-# --------------------------------------------------
-
-st.markdown(
-    '<div class="section-heading">📋 Numerical Results</div>',
-    unsafe_allow_html=True
-)
+st.html("""
+<div class="section-heading">📋 Numerical Results</div>
+""")
 
 results = pd.DataFrame({
     "Time Shift": conv_t,
@@ -565,14 +475,12 @@ st.dataframe(
         "AI Prediction": "{:.5f}",
         "Error": "{:.5f}"
     }),
-    use_container_width=True,
+    width="stretch",
     height=300
 )
 
 
-# --------------------------------------------------
-# DOWNLOAD
-# --------------------------------------------------
+# ==================== DOWNLOAD RESULTS ====================
 
 csv = results.to_csv(index=False).encode("utf-8")
 
@@ -584,40 +492,44 @@ st.download_button(
 )
 
 
-# --------------------------------------------------
-# PROJECT INFORMATION
-# --------------------------------------------------
+# ==================== ABOUT ====================
 
 st.markdown("---")
 
-st.markdown("""
+st.html("""
 <div class="info-card">
-    <h3>✨ About NeuroConvolve</h3>
-    NeuroConvolve combines numerical integration and deep learning
-    to explore mathematical convolution.
+    <h2>✨ About NeuroConvolve</h2>
 
-    <br><br>
+    <p>
+        NeuroConvolve combines numerical integration and
+        deep learning to explore mathematical convolution.
+    </p>
 
-    <b style="color:#C4B5FD;">Mathematical Engine</b> — Numerical convolution
-    using trapezoidal integration.
+    <p>
+        <b style="color:#C4B5FD;">Mathematical Engine</b>
+        — Numerical convolution using trapezoidal integration.
+    </p>
 
-    <br>
+    <p>
+        <b style="color:#F9A8D4;">AI Engine</b>
+        — A trained PyTorch MLP predicts convolution outputs.
+    </p>
 
-    <b style="color:#F9A8D4;">AI Engine</b> — A trained PyTorch MLP
-    predicts the convolution output.
-
-    <br>
-
-    <b style="color:#7DD3FC;">Visualization</b> — Interactive Plotly
-    charts compare the actual output with the model prediction.
+    <p>
+        <b style="color:#7DD3FC;">Visualization</b>
+        — Signal charts compare actual outputs with
+        neural network predictions.
+    </p>
 </div>
-""", unsafe_allow_html=True)
+""")
 
 
-st.markdown("""
+# ==================== FOOTER ====================
+
+st.html("""
 <div class="footer">
-    Built with Python • PyTorch • NumPy • Streamlit • Plotly
-    <br>
+    Built with Python • PyTorch • NumPy • Pandas • Streamlit
+    <br><br>
     NeuroConvolve | Mathematical Intelligence in Motion ✨
 </div>
-""", unsafe_allow_html=True)
+""")
