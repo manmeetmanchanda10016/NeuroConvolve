@@ -1,8 +1,6 @@
 streamlit
-torch==2.15.0
+torch
 numpy
 pandas
-plotly
-scipy
-scikit-learn
 matplotlib
+scipy

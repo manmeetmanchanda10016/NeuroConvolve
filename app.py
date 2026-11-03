@@ -74,7 +74,12 @@ h1, h2, h3 {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 43px;
     font-weight: 800;
-    background: linear-gradient(90deg,#C4B5FD,#F9A8D4,#7DD3FC);
+    background: linear-gradient(
+        90deg,
+        #C4B5FD,
+        #F9A8D4,
+        #7DD3FC
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -98,7 +103,7 @@ h1, h2, h3 {
 .metric-card {
     padding: 20px;
     border-radius: 18px;
-    background: linear-gradient(145deg,#272448,#202D4C);
+    background: linear-gradient(145deg, #272448, #202D4C);
     border: 1px solid rgba(167,139,250,0.3);
     box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     min-height: 115px;
@@ -121,7 +126,7 @@ h1, h2, h3 {
 }
 
 .info-card {
-    background: linear-gradient(135deg,#252044,#192C45);
+    background: linear-gradient(135deg, #252044, #192C45);
     padding: 24px;
     border-radius: 18px;
     border: 1px solid rgba(56,189,248,0.3);
@@ -134,6 +139,33 @@ h1, h2, h3 {
     margin-top: 0;
 }
 
+.neuro-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #F5F3FF;
+    background: #20203D;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14px;
+}
+
+.neuro-table th {
+    background: #49336D;
+    color: white;
+    padding: 13px;
+    text-align: center;
+}
+
+.neuro-table td {
+    padding: 11px;
+    text-align: center;
+    border-bottom: 1px solid #514078;
+}
+
+.neuro-table tr:hover {
+    background: #343052;
+}
+
 .footer {
     text-align: center;
     color: #A5A3C7;
@@ -142,7 +174,7 @@ h1, h2, h3 {
 }
 
 div[data-testid="stDownloadButton"] button {
-    background: linear-gradient(90deg,#0891B2,#2563EB);
+    background: linear-gradient(90deg, #0891B2, #2563EB);
     color: white;
     border: none;
     border-radius: 10px;
@@ -158,12 +190,13 @@ hr {
 
 
 # =====================================================
-# HERO
+# HERO SECTION
 # =====================================================
 
 st.html("""
 <div class="hero">
     <div class="hero-title">〰️ NeuroConvolve</div>
+
     <div class="hero-subtitle">
         Where Mathematical Convolution Meets Neural Networks.
         <br>
@@ -175,7 +208,7 @@ st.html("""
 
 
 # =====================================================
-# CHART STYLING
+# MATPLOTLIB HELPERS
 # =====================================================
 
 def style_axis(ax, title, xlabel="Time", ylabel="Amplitude"):
@@ -202,22 +235,26 @@ def show_figure(fig):
 
 
 # =====================================================
-# LOAD MODEL
+# LOAD TRAINED MODEL
 # =====================================================
 
 @st.cache_resource
 def get_model():
+
     return load_model("models/neuroconvolve_mlp.pth")
 
 
 try:
+
     model = get_model()
 
 except FileNotFoundError:
+
     st.error("Model not found: models/neuroconvolve_mlp.pth")
     st.stop()
 
 except Exception as e:
+
     st.error(f"Model loading error: {e}")
     st.stop()
 
@@ -229,7 +266,12 @@ except Exception as e:
 st.sidebar.markdown("## 🎛️ Signal Studio")
 st.sidebar.caption("Configure your input signals")
 
-signal_options = ["Gaussian", "Sine", "Square", "Triangle"]
+signal_options = [
+    "Gaussian",
+    "Sine",
+    "Square",
+    "Triangle"
+]
 
 st.sidebar.markdown("### 🟣 First Signal")
 
@@ -240,6 +282,7 @@ signal1_type = st.sidebar.selectbox(
 )
 
 st.sidebar.markdown("---")
+
 st.sidebar.markdown("### 🔵 Second Signal")
 
 signal2_type = st.sidebar.selectbox(
@@ -250,7 +293,7 @@ signal2_type = st.sidebar.selectbox(
 
 
 # =====================================================
-# SIGNAL CONTROLS
+# SIGNAL PARAMETERS
 # =====================================================
 
 def signal_controls(name, signal_type):
@@ -259,7 +302,10 @@ def signal_controls(name, signal_type):
 
     amplitude = st.sidebar.slider(
         f"{name} Amplitude",
-        0.1, 3.0, 1.0, 0.1,
+        0.1,
+        3.0,
+        1.0,
+        0.1,
         key=f"{name}_amp"
     )
 
@@ -267,13 +313,19 @@ def signal_controls(name, signal_type):
 
         center = st.sidebar.slider(
             f"{name} Center",
-            -3.0, 3.0, 0.0, 0.1,
+            -3.0,
+            3.0,
+            0.0,
+            0.1,
             key=f"{name}_center"
         )
 
         width = st.sidebar.slider(
             f"{name} Width",
-            0.2, 3.0, 1.0, 0.1,
+            0.2,
+            3.0,
+            1.0,
+            0.1,
             key=f"{name}_width"
         )
 
@@ -281,13 +333,19 @@ def signal_controls(name, signal_type):
 
     frequency = st.sidebar.slider(
         f"{name} Frequency",
-        0.1, 3.0, 1.0, 0.1,
+        0.1,
+        3.0,
+        1.0,
+        0.1,
         key=f"{name}_freq"
     )
 
     phase = st.sidebar.slider(
         f"{name} Phase",
-        0.0, 6.28, 0.0, 0.1,
+        0.0,
+        6.28,
+        0.0,
+        0.1,
         key=f"{name}_phase"
     )
 
@@ -306,7 +364,7 @@ amp2, freq2, phase2, center2, width2 = signal_controls(
 
 
 # =====================================================
-# GENERATE SIGNALS
+# GENERATE INPUT SIGNALS
 # =====================================================
 
 t = np.linspace(-5, 5, 64)
@@ -344,20 +402,23 @@ conv_t, actual = calculate_convolution(signal1, signal2)
 # =====================================================
 
 try:
+
     predicted = predict(model, signal1, signal2)
 
 except Exception as e:
+
     st.error(f"Prediction failed: {e}")
     st.stop()
 
 
 if len(actual) != len(predicted):
+
     st.error("Actual and predicted dimensions do not match.")
     st.stop()
 
 
 # =====================================================
-# METRICS
+# PERFORMANCE METRICS
 # =====================================================
 
 error = actual - predicted
@@ -367,10 +428,6 @@ mse = np.mean(error ** 2)
 rmse = np.sqrt(mse)
 
 
-# =====================================================
-# MODEL PERFORMANCE
-# =====================================================
-
 st.html("""
 <div class="section-heading">📊 Model Performance</div>
 """)
@@ -378,6 +435,7 @@ st.html("""
 c1, c2, c3 = st.columns(3)
 
 with c1:
+
     st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💜 Mean Absolute Error</div>
@@ -386,6 +444,7 @@ with c1:
     """)
 
 with c2:
+
     st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💗 Mean Squared Error</div>
@@ -394,6 +453,7 @@ with c2:
     """)
 
 with c3:
+
     st.html(f"""
     <div class="metric-card">
         <div class="metric-label">💙 Root Mean Squared Error</div>
@@ -410,18 +470,12 @@ st.html("""
 <div class="section-heading">〰️ Input Signal Visualization</div>
 """)
 
-# Both signals are drawn in ONE figure.
-# This avoids the missing second-column chart issue.
-
-fig, axes = plt.subplots(
-    1, 2,
-    figsize=(12, 4)
-)
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
 fig.patch.set_facecolor("#20203D")
 
-axes[0].set_facecolor("#20203D")
-axes[1].set_facecolor("#20203D")
+for ax in axes:
+    ax.set_facecolor("#20203D")
 
 axes[0].plot(
     t,
@@ -431,10 +485,7 @@ axes[0].plot(
     label="Signal 1"
 )
 
-style_axis(
-    axes[0],
-    f"Signal 1 — {signal1_type}"
-)
+style_axis(axes[0], f"Signal 1 — {signal1_type}")
 
 axes[0].legend(
     facecolor="#292747",
@@ -449,10 +500,7 @@ axes[1].plot(
     label="Signal 2"
 )
 
-style_axis(
-    axes[1],
-    f"Signal 2 — {signal2_type}"
-)
+style_axis(axes[1], f"Signal 2 — {signal2_type}")
 
 axes[1].legend(
     facecolor="#292747",
@@ -564,20 +612,19 @@ results = pd.DataFrame({
     "Error": error
 })
 
-st.dataframe(
-    results.style.format({
-        "Time Shift": "{:.3f}",
-        "Actual Convolution": "{:.5f}",
-        "AI Prediction": "{:.5f}",
-        "Error": "{:.5f}"
-    }),
-    width="stretch",
-    height=300
+display_results = results.round(5)
+
+table_html = display_results.to_html(
+    index=False,
+    border=0,
+    classes="neuro-table"
 )
+
+st.html(table_html)
 
 
 # =====================================================
-# CSV DOWNLOAD
+# DOWNLOAD RESULTS
 # =====================================================
 
 csv = results.to_csv(index=False).encode("utf-8")
@@ -586,12 +633,13 @@ st.download_button(
     label="⬇️ Download Results as CSV",
     data=csv,
     file_name="neuroconvolve_results.csv",
-    mime="text/csv"
+    mime="text/csv",
+    width="stretch"
 )
 
 
 # =====================================================
-# ABOUT
+# ABOUT NEUROCONVOLVE
 # =====================================================
 
 st.markdown("---")
@@ -633,7 +681,9 @@ st.html("""
 st.html("""
 <div class="footer">
     Built with Python • PyTorch • NumPy • Pandas • Matplotlib • Streamlit
+
     <br><br>
+
     NeuroConvolve | Mathematical Intelligence in Motion ✨
 </div>
 """)
