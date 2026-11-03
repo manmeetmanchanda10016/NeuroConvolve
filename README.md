@@ -3,7 +3,15 @@
 
 **NeuroConvolve** is an interactive deep learning application that combines mathematical convolution with neural network prediction. It generates different types of signals, computes their actual convolution using numerical integration, and compares the result with predictions from a trained PyTorch neural network.
 
-🌐 **Live Demo:** [Try NeuroConvolve](https://neuroconvolve-r9ipjwho4ympdk2mnvwffc.streamlit.app/)
+<p align="center">
+  <a href="https://neuroconvolve-r9ipjwho4ympdk2mnvwffc.streamlit.app/">
+    <img src="https://img.shields.io/badge/Live%20Demo-Streamlit-red?style=for-the-badge&logo=streamlit" />
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python" />
+  <img src="https://img.shields.io/badge/PyTorch-Deep%20Learning-orange?style=for-the-badge&logo=pytorch" />
+</p>
+
+🌐 **Live Application:** [Launch NeuroConvolve](https://neuroconvolve-r9ipjwho4ympdk2mnvwffc.streamlit.app/)
 
 ---
 
@@ -14,11 +22,32 @@ Mathematical convolution is an important operation in signal processing, mathema
 NeuroConvolve explores how a neural network can learn the relationship between two input signals and predict their convolution output.
 
 The application provides an interactive environment to:
+
 - Generate and customize mathematical signals.
 - Compute actual convolution using numerical integration.
 - Predict convolution outputs using a trained neural network.
 - Compare actual and predicted results visually.
 - Evaluate prediction performance using error metrics.
+
+## 🖥️ Application Screenshots
+
+### Main Dashboard
+
+![NeuroConvolve Dashboard](screenshots/dashboard.png)
+
+### Actual vs Predicted Convolution
+
+![Convolution Comparison](screenshots/convolution.png)
+
+### Prediction Error
+
+![Prediction Error](screenshots/error.png)
+
+### Performance Metrics
+
+![Performance Metrics](screenshots/metrics.png)
+
+---
 
 ## ✨ Features
 
@@ -136,6 +165,10 @@ NeuroConvolve/
 │   └── neuroconvolve_mlp.pth
 │
 ├── screenshots/
+│   ├── dashboard.png
+│   ├── convolution.png
+│   ├── error.png
+│   └── metrics.png
 │
 ├── requirements.txt
 └── README.md
@@ -187,6 +220,7 @@ The evaluation uses MAE and RMSE to measure the difference between mathematicall
 The objective of NeuroConvolve is to explore the application of deep learning to mathematical operations and investigate how neural networks can approximate computationally defined signal transformations.
 
 It combines concepts from:
+
 - Mathematical convolution
 - Signal processing
 - Numerical integration
@@ -202,6 +236,9 @@ Computer Science and Engineering
 
 ---
 
-**NeuroConvolve | Mathematical Intelligence in Motion**
-
-[Live Application](https://neuroconvolve-r9ipjwho4ympdk2mnvwffc.streamlit.app/) · [GitHub Repository](https://github.com/manmeetmanchanda10016/NeuroConvolve)
+<p align="center">
+  <b>NeuroConvolve | Mathematical Intelligence in Motion</b>
+  <br/>
+  <a href="https://neuroconvolve-r9ipjwho4ympdk2mnvwffc.streamlit.app/">Live Application</a> ·
+  <a href="https://github.com/manmeetmanchanda10016/NeuroConvolve">GitHub Repository</a>
+</p>
