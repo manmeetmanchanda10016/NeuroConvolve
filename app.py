@@ -1,8 +1,5 @@
 
-import os
-import tempfile
-
-import gradio as gr
+import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,589 +8,682 @@ from model import load_model, predict
 from convolution import generate_signal, calculate_convolution
 
 
-# ==========================================
-# LOAD TRAINED MODEL
-# ==========================================
-
-model = load_model("models/neuroconvolve_mlp.pth")
-
-
-# ==========================================
-# NEUROCONVOLVE ENGINE
-# ==========================================
-
-def run_neuroconvolve(
-    signal1_type,
-    signal2_type,
-    amp1,
-    amp2,
-    freq1,
-    freq2,
-    phase1,
-    phase2,
-    center1,
-    center2,
-    width1,
-    width2
-):
-
-    t = np.linspace(-5, 5, 64)
-
-    # Generate first signal
-    signal1 = generate_signal(
-        t,
-        signal1_type,
-        amplitude=amp1,
-        frequency=freq1,
-        phase=phase1,
-        center=center1,
-        width=width1
-    )
-
-    # Generate second signal
-    signal2 = generate_signal(
-        t,
-        signal2_type,
-        amplitude=amp2,
-        frequency=freq2,
-        phase=phase2,
-        center=center2,
-        width=width2
-    )
-
-    # Mathematical convolution
-    conv_t, actual = calculate_convolution(
-        signal1,
-        signal2
-    )
-
-    # Neural network prediction
-    predicted = predict(
-        model,
-        signal1,
-        signal2
-    )
-
-    # Prediction error
-    error = actual - predicted
-
-    # Performance metrics
-    mae = float(np.mean(np.abs(error)))
-    mse = float(np.mean(error ** 2))
-    rmse = float(np.sqrt(mse))
-
-    # ======================================
-    # VISUALIZATION
-    # ======================================
-
-    fig, axes = plt.subplots(
-        3,
-        1,
-        figsize=(11, 12)
-    )
-
-    fig.patch.set_facecolor("#111827")
-
-    for ax in axes:
-
-        ax.set_facecolor("#1E293B")
-
-        ax.tick_params(colors="white")
-
-        ax.xaxis.label.set_color("white")
-        ax.yaxis.label.set_color("white")
-        ax.title.set_color("white")
-
-        ax.grid(
-            alpha=0.2,
-            linestyle="--"
-        )
-
-        for spine in ax.spines.values():
-            spine.set_color("#475569")
-
-    # Input signals
-    axes[0].plot(
-        t,
-        signal1,
-        color="#C084FC",
-        linewidth=2.5,
-        label="Signal 1"
-    )
-
-    axes[0].plot(
-        t,
-        signal2,
-        color="#38BDF8",
-        linewidth=2.5,
-        label="Signal 2"
-    )
-
-    axes[0].set_title(
-        "Input Signal Visualization"
-    )
-
-    axes[0].set_xlabel("Time")
-    axes[0].set_ylabel("Amplitude")
-
-    axes[0].legend(
-        facecolor="#1E293B",
-        labelcolor="white"
-    )
-
-    # Actual vs predicted convolution
-    axes[1].plot(
-        conv_t,
-        actual,
-        color="#34D399",
-        linewidth=2.5,
-        label="Actual Convolution"
-    )
-
-    axes[1].plot(
-        conv_t,
-        predicted,
-        "--",
-        color="#F472B6",
-        linewidth=2.5,
-        label="AI Prediction"
-    )
-
-    axes[1].set_title(
-        "Mathematical Convolution vs AI Prediction"
-    )
-
-    axes[1].set_xlabel("Time Shift")
-    axes[1].set_ylabel("Convolution")
-
-    axes[1].legend(
-        facecolor="#1E293B",
-        labelcolor="white"
-    )
-
-    # Prediction error
-    axes[2].plot(
-        conv_t,
-        error,
-        color="#FBBF24",
-        linewidth=2
-    )
-
-    axes[2].axhline(
-        0,
-        color="white",
-        linestyle="--",
-        alpha=0.5
-    )
-
-    axes[2].set_title(
-        "Prediction Error Analysis"
-    )
-
-    axes[2].set_xlabel("Time Shift")
-    axes[2].set_ylabel("Actual - Predicted")
-
-    fig.tight_layout(pad=2)
-
-    # ======================================
-    # NUMERICAL RESULTS
-    # ======================================
-
-    results = pd.DataFrame({
-        "Time Shift": conv_t,
-        "Actual Convolution": actual,
-        "AI Prediction": predicted,
-        "Error": error
-    }).round(5)
-
-    # Create a downloadable CSV file
-    file_descriptor, csv_path = tempfile.mkstemp(
-        suffix=".csv"
-    )
-
-    os.close(file_descriptor)
-
-    results.to_csv(
-        csv_path,
-        index=False
-    )
-
-    return (
-        fig,
-        f"{mae:.5f}",
-        f"{mse:.5f}",
-        f"{rmse:.5f}",
-        results,
-        csv_path
-    )
-
-
-# ==========================================
-# DARK THEME CSS
-# ==========================================
-
-custom_css = """
-
-.gradio-container {
-    background:
-        radial-gradient(
-            circle at top left,
-            #31245A,
-            #111827 55%,
-            #0B172A
-        ) !important;
-
-    color: #F8FAFC !important;
-}
-
-/* Main containers */
-
-.gradio-container .block,
-.gradio-container .form,
-.gradio-container .panel,
-.gradio-container .wrap,
-.gradio-container .gr-box,
-.gradio-container .gr-group {
-
-    background-color: #20203D !important;
-    border-color: #514078 !important;
-}
-
-/* Input fields */
-
-.gradio-container input,
-.gradio-container textarea,
-.gradio-container select {
-
-    background-color: #292747 !important;
-    color: #F8FAFC !important;
-    border-color: #514078 !important;
-}
-
-/* Dropdown menus */
-
-.gradio-container [role="listbox"],
-.gradio-container [role="option"] {
-
-    background-color: #292747 !important;
-    color: #F8FAFC !important;
-}
-
-/* Text and headings */
-
-.gradio-container h1,
-.gradio-container h2,
-.gradio-container h3,
-.gradio-container p,
-.gradio-container label {
-
-    color: #E9D5FF !important;
-}
-
-/* Header */
-
-#main-title {
-
-    text-align: center;
-    padding: 30px;
-    border-radius: 20px;
-
-    background:
-        linear-gradient(
-            120deg,
-            #31245A,
-            #1E3A5F
-        ) !important;
-
-    border: 1px solid #6552A3;
-    margin-bottom: 20px;
-}
-
-#main-title h1 {
-
-    font-size: 42px;
-    font-weight: 800;
-
-    background:
-        linear-gradient(
-            90deg,
-            #C4B5FD,
-            #F9A8D4,
-            #7DD3FC
-        );
-
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent !important;
-}
-
-/* Metric cards */
-
-.metric-box {
-
-    background:
-        linear-gradient(
-            145deg,
-            #272448,
-            #202D4C
-        ) !important;
-
-    border: 1px solid #514078 !important;
-    border-radius: 15px !important;
-}
-
-/* Primary button */
-
-button.primary {
-
-    background:
-        linear-gradient(
-            90deg,
-            #7C3AED,
-            #2563EB
-        ) !important;
-
-    color: white !important;
-    border: none !important;
-    font-weight: bold !important;
-}
-
-/* Sliders */
-
-input[type="range"] {
-    accent-color: #A78BFA !important;
-}
-
-/* Hide footer */
-
-footer {
-    display: none !important;
-}
-
-"""
-
-
-# ==========================================
-# THEME
-# ==========================================
-
-theme = gr.themes.Base(
-    primary_hue="violet",
-    secondary_hue="blue",
-    neutral_hue="slate"
+# =====================================================
+# PAGE CONFIGURATION
+# =====================================================
+
+st.set_page_config(
+    page_title="NeuroConvolve",
+    page_icon="〰️",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 
-# ==========================================
-# GRADIO APPLICATION
-# ==========================================
+# =====================================================
+# CUSTOM CSS
+# =====================================================
 
-with gr.Blocks(
-    title="NeuroConvolve | Signal Studio",
-    theme=theme,
-    css=custom_css
-) as demo:
+st.markdown("""
+<style>
 
-    # Header
-    with gr.Column(elem_id="main-title"):
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-        gr.Markdown(
-            "# 〰️ NeuroConvolve"
-        )
+.stApp {
+    background:
+        radial-gradient(ellipse at 5% 5%, #35205D 0%, transparent 35%),
+        radial-gradient(ellipse at 95% 10%, #123B5B 0%, transparent 35%),
+        #101225;
+    color: #F5F3FF;
+    font-family: 'DM Sans', sans-serif;
+}
 
-        gr.Markdown(
-            "Where Mathematical Convolution Meets Neural Networks."
-            "\n\nExplore signals, calculate convolution and compare mathematical results with AI predictions."
-        )
+[data-testid="stHeader"] {
+    background: transparent;
+}
 
-    # Signal selection
-    gr.Markdown("## 🎛️ Signal Studio")
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #201B40, #151A34);
+    border-right: 1px solid #514078;
+}
 
-    with gr.Row():
+[data-testid="stSidebar"] * {
+    color: #F5F3FF;
+}
 
-        signal1_type = gr.Dropdown(
-            ["Gaussian", "Sine", "Square", "Triangle"],
-            value="Sine",
-            label="🟣 First Signal"
-        )
+h1, h2, h3 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    color: white !important;
+}
 
-        signal2_type = gr.Dropdown(
-            ["Gaussian", "Sine", "Square", "Triangle"],
-            value="Sine",
-            label="🔵 Second Signal"
-        )
+.hero {
+    padding: 35px 30px;
+    border-radius: 25px;
+    background: linear-gradient(
+        115deg,
+        rgba(124,58,237,0.4),
+        rgba(219,39,119,0.3),
+        rgba(14,165,233,0.3)
+    );
+    border: 1px solid rgba(196,181,253,0.35);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+    margin-bottom: 28px;
+}
 
-    # Signal parameters
-    gr.Markdown("## ⚙️ Signal Parameters")
+.hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 43px;
+    font-weight: 800;
+    background: linear-gradient(
+        90deg,
+        #C4B5FD,
+        #F9A8D4,
+        #7DD3FC
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-    with gr.Row():
+.hero-subtitle {
+    color: #DDD6FE;
+    font-size: 16px;
+    margin-top: 8px;
+    line-height: 1.7;
+}
 
-        with gr.Column():
+.section-heading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 23px;
+    font-weight: 700;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #E9D5FF;
+}
 
-            gr.Markdown("### 🟣 Signal 1")
+.metric-card {
+    padding: 20px;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #272448, #202D4C);
+    border: 1px solid rgba(167,139,250,0.3);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    min-height: 115px;
+}
 
-            amp1 = gr.Slider(
-                0.1, 3,
-                value=1,
-                label="Amplitude"
-            )
+.metric-label {
+    color: #C4B5FD;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-            freq1 = gr.Slider(
-                0.1, 3,
-                value=1,
-                label="Frequency"
-            )
+.metric-value {
+    color: white;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 27px;
+    font-weight: 800;
+    margin-top: 8px;
+}
 
-            phase1 = gr.Slider(
-                0, 6.28,
-                value=0,
-                label="Phase"
-            )
+.info-card {
+    background: linear-gradient(135deg, #252044, #192C45);
+    padding: 24px;
+    border-radius: 18px;
+    border: 1px solid rgba(56,189,248,0.3);
+    line-height: 1.8;
+    color: #F5F3FF;
+}
 
-            center1 = gr.Slider(
-                -3, 3,
-                value=0,
-                label="Center"
-            )
+.info-card h2 {
+    color: #E9D5FF !important;
+    margin-top: 0;
+}
 
-            width1 = gr.Slider(
-                0.2, 3,
-                value=1,
-                label="Width"
-            )
+.neuro-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #F5F3FF;
+    background: #20203D;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14px;
+}
 
-        with gr.Column():
+.neuro-table th {
+    background: #49336D;
+    color: white;
+    padding: 13px;
+    text-align: center;
+}
 
-            gr.Markdown("### 🔵 Signal 2")
+.neuro-table td {
+    padding: 11px;
+    text-align: center;
+    border-bottom: 1px solid #514078;
+}
 
-            amp2 = gr.Slider(
-                0.1, 3,
-                value=1,
-                label="Amplitude"
-            )
+.neuro-table tr:hover {
+    background: #343052;
+}
 
-            freq2 = gr.Slider(
-                0.1, 3,
-                value=1,
-                label="Frequency"
-            )
+.footer {
+    text-align: center;
+    color: #A5A3C7;
+    padding: 25px 0 10px 0;
+    font-size: 13px;
+}
 
-            phase2 = gr.Slider(
-                0, 6.28,
-                value=0,
-                label="Phase"
-            )
+div[data-testid="stDownloadButton"] button {
+    background: linear-gradient(90deg, #0891B2, #2563EB);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+}
 
-            center2 = gr.Slider(
-                -3, 3,
-                value=0,
-                label="Center"
-            )
+hr {
+    border-color: rgba(196,181,253,0.2);
+}
 
-            width2 = gr.Slider(
-                0.2, 3,
-                value=1,
-                label="Width"
-            )
+</style>
+""", unsafe_allow_html=True)
 
-    # Calculate button
-    run_button = gr.Button(
-        "🚀 Calculate Convolution",
-        variant="primary",
-        size="lg"
+
+# =====================================================
+# HERO SECTION
+# =====================================================
+
+st.html("""
+<div class="hero">
+    <div class="hero-title">〰️ NeuroConvolve</div>
+
+    <div class="hero-subtitle">
+        Where Mathematical Convolution Meets Neural Networks.
+        <br>
+        Explore signals, calculate convolution and compare it
+        with AI predictions.
+    </div>
+</div>
+""")
+
+
+# =====================================================
+# MATPLOTLIB HELPERS
+# =====================================================
+
+def style_axis(ax, title, xlabel="Time", ylabel="Amplitude"):
+
+    ax.set_title(title, color="white", fontsize=13, pad=12)
+    ax.set_xlabel(xlabel, color="white")
+    ax.set_ylabel(ylabel, color="white")
+
+    ax.tick_params(colors="white")
+    ax.grid(alpha=0.2, linestyle="--")
+
+    for spine in ax.spines.values():
+        spine.set_color("#514078")
+
+
+def show_figure(fig):
+
+    fig.patch.set_facecolor("#20203D")
+    fig.tight_layout(pad=2)
+
+    st.pyplot(fig, width="stretch")
+
+    plt.close(fig)
+
+
+# =====================================================
+# LOAD TRAINED MODEL
+# =====================================================
+
+@st.cache_resource
+def get_model():
+
+    return load_model("models/neuroconvolve_mlp.pth")
+
+
+try:
+
+    model = get_model()
+
+except FileNotFoundError:
+
+    st.error("Model not found: models/neuroconvolve_mlp.pth")
+    st.stop()
+
+except Exception as e:
+
+    st.error(f"Model loading error: {e}")
+    st.stop()
+
+
+# =====================================================
+# SIDEBAR
+# =====================================================
+
+st.sidebar.markdown("## 🎛️ Signal Studio")
+st.sidebar.caption("Configure your input signals")
+
+signal_options = [
+    "Gaussian",
+    "Sine",
+    "Square",
+    "Triangle"
+]
+
+st.sidebar.markdown("### 🟣 First Signal")
+
+signal1_type = st.sidebar.selectbox(
+    "Choose Signal 1",
+    signal_options,
+    key="signal1_type"
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.markdown("### 🔵 Second Signal")
+
+signal2_type = st.sidebar.selectbox(
+    "Choose Signal 2",
+    signal_options,
+    key="signal2_type"
+)
+
+
+# =====================================================
+# SIGNAL PARAMETERS
+# =====================================================
+
+def signal_controls(name, signal_type):
+
+    st.sidebar.markdown(f"#### ⚙️ {name} Parameters")
+
+    amplitude = st.sidebar.slider(
+        f"{name} Amplitude",
+        0.1,
+        3.0,
+        1.0,
+        0.1,
+        key=f"{name}_amp"
     )
 
-    # Performance metrics
-    gr.Markdown("## 📊 Model Performance")
+    if signal_type == "Gaussian":
 
-    with gr.Row():
-
-        mae_output = gr.Textbox(
-            label="💜 Mean Absolute Error",
-            interactive=False,
-            elem_classes="metric-box"
+        center = st.sidebar.slider(
+            f"{name} Center",
+            -3.0,
+            3.0,
+            0.0,
+            0.1,
+            key=f"{name}_center"
         )
 
-        mse_output = gr.Textbox(
-            label="💗 Mean Squared Error",
-            interactive=False,
-            elem_classes="metric-box"
+        width = st.sidebar.slider(
+            f"{name} Width",
+            0.2,
+            3.0,
+            1.0,
+            0.1,
+            key=f"{name}_width"
         )
 
-        rmse_output = gr.Textbox(
-            label="💙 Root Mean Squared Error",
-            interactive=False,
-            elem_classes="metric-box"
-        )
+        return amplitude, 1.0, 0.0, center, width
 
-    # Visualizations
-    gr.Markdown("## 🧠 NeuroConvolve Visualizations")
-
-    plot = gr.Plot(
-        label="Signal and Convolution Analysis"
+    frequency = st.sidebar.slider(
+        f"{name} Frequency",
+        0.1,
+        3.0,
+        1.0,
+        0.1,
+        key=f"{name}_freq"
     )
 
-    # Numerical results
-    gr.Markdown("## 📋 Numerical Results")
-
-    results_table = gr.Dataframe(
-        interactive=False,
-        label="Convolution Results"
+    phase = st.sidebar.slider(
+        f"{name} Phase",
+        0.0,
+        6.28,
+        0.0,
+        0.1,
+        key=f"{name}_phase"
     )
 
-    download_file = gr.File(
-        label="⬇️ Download Results as CSV"
-    )
-
-    # Connect function
-    run_button.click(
-        fn=run_neuroconvolve,
-
-        inputs=[
-            signal1_type,
-            signal2_type,
-            amp1,
-            amp2,
-            freq1,
-            freq2,
-            phase1,
-            phase2,
-            center1,
-            center2,
-            width1,
-            width2
-        ],
-
-        outputs=[
-            plot,
-            mae_output,
-            mse_output,
-            rmse_output,
-            results_table,
-            download_file
-        ]
-    )
-
-    # Footer
-    gr.Markdown(
-        """
-        ---
-
-        <center>
-
-        Built with Python · PyTorch · NumPy · Pandas · Matplotlib · Gradio
-
-        **NeuroConvolve | Mathematical Intelligence in Motion**
-
-        </center>
-        """
-    )
+    return amplitude, frequency, phase, 0.0, 1.0
 
 
-# ==========================================
-# LAUNCH
-# ==========================================
+amp1, freq1, phase1, center1, width1 = signal_controls(
+    "Signal 1", signal1_type
+)
 
-if __name__ == "__main__":
+st.sidebar.markdown("---")
 
-    demo.launch()
+amp2, freq2, phase2, center2, width2 = signal_controls(
+    "Signal 2", signal2_type
+)
+
+
+# =====================================================
+# GENERATE INPUT SIGNALS
+# =====================================================
+
+t = np.linspace(-5, 5, 64)
+
+signal1 = generate_signal(
+    t,
+    signal1_type,
+    amplitude=amp1,
+    frequency=freq1,
+    phase=phase1,
+    center=center1,
+    width=width1
+)
+
+signal2 = generate_signal(
+    t,
+    signal2_type,
+    amplitude=amp2,
+    frequency=freq2,
+    phase=phase2,
+    center=center2,
+    width=width2
+)
+
+
+# =====================================================
+# MATHEMATICAL CONVOLUTION
+# =====================================================
+
+conv_t, actual = calculate_convolution(signal1, signal2)
+
+
+# =====================================================
+# AI PREDICTION
+# =====================================================
+
+try:
+
+    predicted = predict(model, signal1, signal2)
+
+except Exception as e:
+
+    st.error(f"Prediction failed: {e}")
+    st.stop()
+
+
+if len(actual) != len(predicted):
+
+    st.error("Actual and predicted dimensions do not match.")
+    st.stop()
+
+
+# =====================================================
+# PERFORMANCE METRICS
+# =====================================================
+
+error = actual - predicted
+
+mae = np.mean(np.abs(error))
+mse = np.mean(error ** 2)
+rmse = np.sqrt(mse)
+
+
+st.html("""
+<div class="section-heading">📊 Model Performance</div>
+""")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+
+    st.html(f"""
+    <div class="metric-card">
+        <div class="metric-label">💜 Mean Absolute Error</div>
+        <div class="metric-value">{mae:.5f}</div>
+    </div>
+    """)
+
+with c2:
+
+    st.html(f"""
+    <div class="metric-card">
+        <div class="metric-label">💗 Mean Squared Error</div>
+        <div class="metric-value">{mse:.5f}</div>
+    </div>
+    """)
+
+with c3:
+
+    st.html(f"""
+    <div class="metric-card">
+        <div class="metric-label">💙 Root Mean Squared Error</div>
+        <div class="metric-value">{rmse:.5f}</div>
+    </div>
+    """)
+
+
+# =====================================================
+# INPUT SIGNAL VISUALIZATION
+# =====================================================
+
+st.html("""
+<div class="section-heading">〰️ Input Signal Visualization</div>
+""")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+fig.patch.set_facecolor("#20203D")
+
+for ax in axes:
+    ax.set_facecolor("#20203D")
+
+axes[0].plot(
+    t,
+    signal1,
+    color="#C084FC",
+    linewidth=2.5,
+    label="Signal 1"
+)
+
+style_axis(axes[0], f"Signal 1 — {signal1_type}")
+
+axes[0].legend(
+    facecolor="#292747",
+    labelcolor="white"
+)
+
+axes[1].plot(
+    t,
+    signal2,
+    color="#38BDF8",
+    linewidth=2.5,
+    label="Signal 2"
+)
+
+style_axis(axes[1], f"Signal 2 — {signal2_type}")
+
+axes[1].legend(
+    facecolor="#292747",
+    labelcolor="white"
+)
+
+show_figure(fig)
+
+
+# =====================================================
+# CONVOLUTION COMPARISON
+# =====================================================
+
+st.html("""
+<div class="section-heading">
+    🧠 Mathematical Convolution vs AI Prediction
+</div>
+""")
+
+fig, ax = plt.subplots(figsize=(11, 5))
+
+fig.patch.set_facecolor("#20203D")
+ax.set_facecolor("#20203D")
+
+ax.plot(
+    conv_t,
+    actual,
+    color="#34D399",
+    linewidth=2.5,
+    label="Actual Convolution"
+)
+
+ax.plot(
+    conv_t,
+    predicted,
+    color="#F472B6",
+    linewidth=2.5,
+    linestyle="--",
+    label="AI Prediction"
+)
+
+style_axis(
+    ax,
+    "Actual vs AI Predicted Convolution",
+    "Time Shift",
+    "Convolution"
+)
+
+ax.legend(
+    facecolor="#292747",
+    edgecolor="#514078",
+    labelcolor="white"
+)
+
+show_figure(fig)
+
+
+# =====================================================
+# ERROR ANALYSIS
+# =====================================================
+
+st.html("""
+<div class="section-heading">
+    📉 Prediction Error Analysis
+</div>
+""")
+
+fig, ax = plt.subplots(figsize=(11, 4))
+
+fig.patch.set_facecolor("#20203D")
+ax.set_facecolor("#20203D")
+
+ax.plot(
+    conv_t,
+    error,
+    color="#FBBF24",
+    linewidth=2
+)
+
+ax.axhline(
+    0,
+    color="white",
+    linestyle="--",
+    alpha=0.5
+)
+
+style_axis(
+    ax,
+    "Prediction Error",
+    "Time Shift",
+    "Actual - Predicted"
+)
+
+show_figure(fig)
+
+
+# =====================================================
+# NUMERICAL RESULTS
+# =====================================================
+
+st.html("""
+<div class="section-heading">📋 Numerical Results</div>
+""")
+
+results = pd.DataFrame({
+    "Time Shift": conv_t,
+    "Actual Convolution": actual,
+    "AI Prediction": predicted,
+    "Error": error
+})
+
+display_results = results.round(5)
+
+table_html = display_results.to_html(
+    index=False,
+    border=0,
+    classes="neuro-table"
+)
+
+st.html(table_html)
+
+
+# =====================================================
+# DOWNLOAD RESULTS
+# =====================================================
+
+csv = results.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="⬇️ Download Results as CSV",
+    data=csv,
+    file_name="neuroconvolve_results.csv",
+    mime="text/csv",
+    width="stretch"
+)
+
+
+# =====================================================
+# ABOUT NEUROCONVOLVE
+# =====================================================
+
+st.markdown("---")
+
+st.html("""
+<div class="info-card">
+
+    <h2>✨ About NeuroConvolve</h2>
+
+    <p>
+        NeuroConvolve combines numerical integration and
+        deep learning to explore mathematical convolution.
+    </p>
+
+    <p>
+        <b style="color:#C4B5FD;">Mathematical Engine</b>
+        — Numerical convolution using trapezoidal integration.
+    </p>
+
+    <p>
+        <b style="color:#F9A8D4;">AI Engine</b>
+        — A trained PyTorch MLP predicts convolution outputs.
+    </p>
+
+    <p>
+        <b style="color:#7DD3FC;">Visualization</b>
+        — Matplotlib charts compare actual outputs with
+        neural network predictions.
+    </p>
+
+</div>
+""")
+
+
+# =====================================================
+# FOOTER
+# =====================================================
+
+st.html("""
+<div class="footer">
+    Built with Python • PyTorch • NumPy • Pandas • Matplotlib • Streamlit
+
+    <br><br>
+
+    NeuroConvolve | Mathematical Intelligence in Motion ✨
+</div>
+""")
