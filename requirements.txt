@@ -1,6 +1,7 @@
 streamlit
-torch
+torch==2.15.0
 numpy
 pandas
 plotly
+scipy
 scikit-learn
